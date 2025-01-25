@@ -26,10 +26,7 @@ struct sbiret sbi_call(long arg0, long arg1, long arg2,
 void kernel_main(void) {
     memset(__bss, 0, (size_t)__bss_end - (size_t)__bss);
 	
-	const char *s = "\n\nHello World!\n\n";
-    for (int i = 0; s[i]; i++) {
-        putchar(s[i]);
-    }
+	printf("\n\nHello World!\n\n");
 
     for (;;) {
         __asm__ __volatile__("wfi");
