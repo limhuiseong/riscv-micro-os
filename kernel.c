@@ -46,8 +46,6 @@ void kernel_main(void) {
     }
 }
 
-__attribute__((section(".text.boot")))
-__attribute__((naked))
 void boot(void) {
     __asm__ __volatile__(
         "mv sp, %[stack_top]\n"
