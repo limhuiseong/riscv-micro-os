@@ -1,4 +1,5 @@
 #include "kernel.h"
+#include "common.h"
 
 extern char __bss[], __bss_end[], __stack_top[];
 
@@ -20,17 +21,6 @@ struct sbiret sbi_call(long arg0, long arg1, long arg2,
                            "r"(a6), "r"(a7)
                          : "memory");
     return (struct sbiret){.error = a0, .value = a1};
-}
-
-void putchar(char ch) {
-    sbi_call(ch, 0, 0, 0, 0, 0, 0, 1);
-}
-
-void *memset(void *buf, char c, size_t n) {
-    uint8_t *p = (uint8_t *) buf;
-    while (n--)
-        *p++ = c;
-    return buf;
 }
 
 void kernel_main(void) {
