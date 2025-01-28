@@ -26,7 +26,7 @@ struct sbiret sbi_call(long arg0, long arg1, long arg2,
 void kernel_main(void) {
     memset(__bss, 0, (size_t)__bss_end - (size_t)__bss);
 	
-	printf("\n\nHello World!\n\n");
+    PANIC("\n\nbooted!\n\n");
 
     for (;;) {
         __asm__ __volatile__("wfi");
