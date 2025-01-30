@@ -22,13 +22,14 @@ SECTIONS {
         __bss_end = .;                  /* End of BSS section */
     }
 
-    /* kernel stack */
+    /* Kernel stack */
     . = ALIGN(4);                       /* Align to 4 bytes */
     . += 128 * 1024;                    /* 128KB */
     __stack_top = .;                    /* Top of the kernel stack */
 
-    . = ALIGN(4096);
-    __free_ram = .;
-    . += 64 * 1024 * 1024;
-    __free_ram_end = .;
+    /* Memory allocation area */             
+    . = ALIGN(4096);                    /* Align to 4096 bytes */
+    __free_ram = .;                     /* Start of memory allocation area */
+    . += 64 * 1024 * 1024;              /* 64MB */
+    __free_ram_end = .;                 /* End of memory allocation area */
 }
