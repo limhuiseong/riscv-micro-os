@@ -15,3 +15,6 @@ Run the Operating System
 ```bash
 $ ./run.sh
 ```
+
+## 📚 References
+- [RISC-V SBI specification](https://github.com/riscv-non-isa/riscv-sbi-doc)
