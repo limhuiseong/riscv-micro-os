@@ -89,7 +89,7 @@ void kernel_main(void);
 
 __attribute__((naked)) __attribute__((aligned(4))) void kernel_entry(void);
 
-void handle_trap(struct trap_frame *f);
+void handle_trap(void);
 
 paddr_t alloc_pages(uint32_t n);
 

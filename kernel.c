@@ -5,16 +5,44 @@ extern char __bss[], __bss_end[], __stack_top[];
 extern char __free_ram[], __free_ram_end[];
 
 struct process procs[PROCS_MAX];
+
 struct process *proc_a;
 struct process *proc_b;
+
+struct process *current_proc;
+struct process *idle_proc;
+
+void yield(void)
+{
+    struct process *next = idle_proc;
+    for (int i = 0; i < PROCS_MAX; i++) {
+        struct process *proc = &procs[(current_proc->pid + i) % PROCS_MAX];
+        if (proc->state == PROC_RUNNABLE && proc->pid > 0) {
+            next = proc;
+            break;
+        }
+    }
+    if (next == current_proc)
+        return;
+
+    __asm__ __volatile__(
+        "csrw sscratch, %[sscratch]\n"
+        :
+        : [sscratch] "r" ((uint32_t) &next->stack[sizeof(next->stack)])
+    );
+
+    struct process *prev = current_proc;
+    current_proc = next;
+    switch_context(&prev->sp, &next->sp);
+}
 
 void proc_a_entry(void) 
 {
     printf("starting process A\n");
     while (1) {
         putchar('A');
-        switch_context(&proc_a->sp, &proc_b->sp);
         delay();
+        yield();
     }
 }
 
@@ -23,8 +51,8 @@ void proc_b_entry(void)
     printf("starting process B\n");
     while (1) {
         putchar('B');
-        switch_context(&proc_b->sp, &proc_a->sp);
         delay();
+        yield();
     }
 }
 
@@ -49,21 +77,20 @@ struct process *create_process(uint32_t pc)
         PANIC("no free process slots");
 
     uint32_t *sp = (uint32_t *) &proc->stack[sizeof(proc->stack)];
-    *--sp = 0;                      // s11
-    *--sp = 0;                      // s10
-    *--sp = 0;                      // s9
-    *--sp = 0;                      // s8
-    *--sp = 0;                      // s7
-    *--sp = 0;                      // s6
-    *--sp = 0;                      // s5
-    *--sp = 0;                      // s4
-    *--sp = 0;                      // s3
-    *--sp = 0;                      // s2
-    *--sp = 0;                      // s1
-    *--sp = 0;                      // s0
-    *--sp = (uint32_t) pc;          // ra (처음 실행 시 점프할 주소)
+    *--sp = 0;          
+    *--sp = 0;              
+    *--sp = 0;              
+    *--sp = 0;                
+    *--sp = 0;                
+    *--sp = 0;             
+    *--sp = 0;               
+    *--sp = 0;                
+    *--sp = 0;             
+    *--sp = 0;    
+    *--sp = 0; 
+    *--sp = 0;
+    *--sp = (uint32_t) pc;
 
-    // 구조체 필드 초기화
     proc->pid = i + 1;
     proc->state = PROC_RUNNABLE;
     proc->sp = (uint32_t) sp;
@@ -124,7 +151,7 @@ paddr_t alloc_pages(uint32_t n)
 
 void kernel_entry(void)
 {
-    __asm__ __volatile__("csrw sscratch, sp\n"
+    __asm__ __volatile__( "csrrw sp, sscratch, sp\n"
                          "addi sp, sp, -4 * 31\n"
                          "sw ra,  4 * 0(sp)\n"
                          "sw gp,  4 * 1(sp)\n"
@@ -158,7 +185,10 @@ void kernel_entry(void)
                          "sw s11, 4 * 29(sp)\n"
 
                          "csrr a0, sscratch\n"
-                         "sw a0, 4 * 30(sp)\n"
+                        "sw a0,  4 * 30(sp)\n"
+
+                        "addi a0, sp, 4 * 31\n"
+                        "csrw sscratch, a0\n"
 
                          "mv a0, sp\n"
                          "call handle_trap\n"
@@ -197,7 +227,7 @@ void kernel_entry(void)
                          "sret\n");
 }
 
-void handle_trap(struct trap_frame *f)
+void handle_trap(void)
 {
     uint32_t scause = READ_CSR(scause);
     uint32_t stval = READ_CSR(stval);
@@ -230,11 +260,14 @@ void kernel_main(void)
 
     WRITE_CSR(stvec, (uint32_t) kernel_entry);
 
+    idle_proc = create_process((uint32_t) NULL);
+    idle_proc->pid = -1; // idle
+    current_proc = idle_proc;
+
     proc_a = create_process((uint32_t) proc_a_entry);
     proc_b = create_process((uint32_t) proc_b_entry);
-    proc_a_entry();
-
-    PANIC("ERROR: kernel_main() should never return\n");
+    yield();
+    PANIC();
 }
 
 void boot(void)
