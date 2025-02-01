@@ -26,8 +26,8 @@
         }                                                                                                              \
     } while (0)
 
-#define PROCS_MAX     8
-#define PROC_UNUSED   0
+#define PROCS_MAX 8
+#define PROC_UNUSED 0
 #define PROC_RUNNABLE 1
 
 struct trap_frame
@@ -76,7 +76,8 @@ struct sbiret
 
 struct sbiret sbi_call(long arg0, long arg1, long arg2, long arg3, long arg4, long arg5, long fid, long eid);
 
-struct process {
+struct process
+{
     int pid;
     int state;
     vaddr_t sp;
