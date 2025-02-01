@@ -13,6 +13,7 @@ struct process
     int state;
     vaddr_t sp;
     uint8_t stack[8192];
+    uint32_t *page_table;
 };
 
 struct process *create_process(uint32_t pc);

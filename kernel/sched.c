@@ -1,5 +1,8 @@
 #include "sched.h"
+#include "mm.h"
 #include "panic.h"
+
+extern char __kernel_base[], __free_ram_end[];
 
 struct process procs[PROCS_MAX];
 struct process *current_proc;
@@ -36,9 +39,14 @@ struct process *create_process(uint32_t pc)
     *--sp = 0;
     *--sp = (uint32_t)pc;
 
+    uint32_t *page_table = (uint32_t *)alloc_pages(1);
+    for (paddr_t paddr = (paddr_t)__kernel_base; paddr < (paddr_t)__free_ram_end; paddr += PAGE_SIZE)
+        map_page(page_table, paddr, paddr, PAGE_R | PAGE_W | PAGE_X);
+
     proc->pid = i + 1;
     proc->state = PROC_RUNNABLE;
     proc->sp = (uint32_t)sp;
+    proc->page_table = page_table;
     return proc;
 }
 
@@ -77,4 +85,35 @@ void switch_context(uint32_t *prev_sp, uint32_t *next_sp)
                          "lw s11, 12 * 4(sp)\n"
                          "addi sp, sp, 13 * 4\n"
                          "ret\n");
+}
+
+void yield(void)
+{
+    struct process *next = idle_proc;
+    for (int i = 0; i < PROCS_MAX; i++)
+    {
+        struct process *proc = &procs[(current_proc->pid + i) % PROCS_MAX];
+        if (proc->state == PROC_RUNNABLE && proc->pid > 0)
+        {
+            next = proc;
+            break;
+        }
+    }
+
+    if (next == current_proc)
+        return;
+
+    __asm__ __volatile__(
+        "sfence.vma\n"
+        "csrw satp, %[satp]\n"
+        "sfence.vma\n"
+        "csrw sscratch, %[sscratch]\n"
+        :
+        : [satp] "r"(SATP_SV32 | ((uint32_t)next->page_table / PAGE_SIZE)), [sscratch] "r"(
+                                                                                (uint32_t)&next->stack[sizeof(
+                                                                                    next->stack)]));
+
+    struct process *prev = current_proc;
+    current_proc = next;
+    switch_context(&prev->sp, &next->sp);
 }
