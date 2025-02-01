@@ -10,15 +10,13 @@ void main(void)
 {
     memset(__bss, 0, (size_t)__bss_end - (size_t)__bss);
 
-    char *booting_msg = "booting...\n";
+    char *boot_msg = "\n\nbooting...\nRISCV MICRO OS 0.0.1\n";
 
-    printf("\n\n");
-    while (*booting_msg)
+    while (*boot_msg)
     {
-        putchar(*booting_msg++);
-        delay(50000000);
+        putchar(*boot_msg++);
+        delay(30000000);
     }
-    printf("RISCV MICRO OS 0.0.1\n");
 
     for (;;)
         __asm__ __volatile__("wfi");
