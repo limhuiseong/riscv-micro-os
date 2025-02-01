@@ -7,6 +7,8 @@
 #define PROC_UNUSED 0
 #define PROC_RUNNABLE 1
 
+extern char __kernel_base[], __free_ram_end[];
+
 struct process
 {
     int pid;

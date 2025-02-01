@@ -2,8 +2,6 @@
 #include "mm.h"
 #include "panic.h"
 
-extern char __kernel_base[], __free_ram_end[];
-
 struct process procs[PROCS_MAX];
 struct process *current_proc;
 struct process *idle_proc;
