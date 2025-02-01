@@ -1,5 +1,5 @@
 #include "console.h"
-#include "riscv/sbi.h"
+#include "arch/riscv/sbi.h"
 #include "types.h"
 
 void putchar(char ch)
