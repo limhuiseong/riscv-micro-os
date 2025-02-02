@@ -3,4 +3,4 @@
 
 boot:
     la sp, __stack_top
-    j main
+    j start_kernel
